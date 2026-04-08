@@ -314,6 +314,44 @@ cc_library(
     ],
 )
 
+genrule(
+    name = "gen_json_enumvalue_options_cc_sources",
+    srcs = ["json_enumvalue_options.proto"],
+    outs =
+        ["zproto/google/protobuf/json_enumvalue_options.pb.h"] + [
+            "zproto/google/protobuf/json_enumvalue_options.pb.cc",
+        ],
+    cmd = """
+        $(execpath //:protoc) \
+            --cpp_out=dllexport_decl=PROTOBUF_EXPORT:$(RULEDIR)/zproto \
+            --proto_path=$$(dirname $$(dirname $$(dirname $(location json_enumvalue_options.proto)))) \
+            $(SRCS)
+    """,
+    tools = ["//:protoc"],
+    visibility = ["//visibility:private"],
+)
+
+staleness_test(
+    name = "json_enumvalue_options_staleness_test",
+    outs =
+        ["zproto/google/protobuf/json_enumvalue_options.pb.h"] + [
+            "zproto/google/protobuf/json_enumvalue_options.pb.cc",
+        ],
+    generated_pattern = "zproto/google/protobuf/%s",
+    tags = ["manual"],
+)
+
+cc_library(
+    name = "cmake_json_enumvalue_options_cc_proto",
+    srcs = ["zproto/google/protobuf/json_enumvalue_options.pb.cc"],
+    hdrs = ["zproto/google/protobuf/json_enumvalue_options.pb.h"],
+    copts = COPTS,
+    includes = ["zproto"],
+    linkopts = LINK_OPTS,
+    strip_include_prefix = "/src",
+    visibility = ["//pkg:__pkg__"],
+)
+
 # Built-in runtime types
 
 proto_library(
@@ -378,7 +416,7 @@ proto_library(
 
 cc_proto_library(
     name = "json_enumvalue_options_cc_proto",
-    visibility = ["//visibility:private"],
+    visibility = ["//:__subpackages__"],
     deps = [":json_enumvalue_options_proto"],
 )
 
