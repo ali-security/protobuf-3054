@@ -2,11 +2,11 @@ name: Python Build Artifacts
 
 on:
   push:
-    branches: [ "*" ]
+    branches: ['*']
   workflow_dispatch:
 
 env:
-    PIP_INDEX_URL: "https://:2022-09-14T00:00:00.000000Z@time-machines-pypi.sealsecurity.io/"
+  PIP_INDEX_URL: https://:2022-09-14T00:00:00.000000Z@time-machines-pypi.sealsecurity.io/
 
 jobs:
   maynlinux:
@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             script: kokoro/release/python/linux/build_artifacts.sh
             image: quay.io/pypa/manylinux2014_x86_64:2021-09-27-ed30de0
             artifact_name: manylinux2014_x86_64
@@ -29,15 +29,14 @@ jobs:
         uses: MatteoH2O1999/setup-python@v4
         with:
           python-version: '3.6' # Only used to run the build script
-    
       - name: Run build script (Bash)
         run: |
-            python3 -m venv .venv
-            source .venv/bin/activate
-            python -m pip install -U virtualenv
-            bash ${{ matrix.script }}
+          python3 -m venv .venv
+          source .venv/bin/activate
+          python -m pip install -U virtualenv
+          bash ${{ matrix.script }}
         env:
-            DOCKER_IMAGE: ${{ matrix.image }}
+          DOCKER_IMAGE: ${{ matrix.image }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -46,7 +45,7 @@ jobs:
           path: artifacts
   macos:
     name: Build Python artifacts on macos
-    runs-on: macos-latest
+    runs-on: macos-14
     strategy:
       fail-fast: false
       matrix:
@@ -74,12 +73,12 @@ jobs:
 
       - name: Run build script (Bash)
         run: |
-            ln -s $PYTHON_EXE `dirname $PYTHON_EXE`/python 
-            $PYTHON_EXE -m pip install -U virtualenv pip wheel setuptools
-            bash kokoro/release/python/macos/build_artifacts.sh
+          ln -s $PYTHON_EXE `dirname $PYTHON_EXE`/python 
+          $PYTHON_EXE -m pip install -U virtualenv pip wheel setuptools
+          bash kokoro/release/python/macos/build_artifacts.sh
         env:
-            MB_PYTHON_OSX_VER: ${{ matrix.python-version }}
-            PYTHON_EXE: /Library/Frameworks/Python.framework/Versions/${{ matrix.python-version }}/bin/python3
+          MB_PYTHON_OSX_VER: ${{ matrix.python-version }}
+          PYTHON_EXE: /Library/Frameworks/Python.framework/Versions/${{ matrix.python-version }}/bin/python3
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -88,7 +87,7 @@ jobs:
           path: artifacts
   universal:
     name: Build Python artifacts on universal
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -103,9 +102,9 @@ jobs:
           python-version: '3.6' # Only used to run the build script
       - name: Run build script (Bash)
         run: |
-            cd python
-            python3 -m pip install -U virtualenv pip wheel setuptools
-            python3 setup.py clean build bdist_wheel sdist
+          cd python
+          python3 -m pip install -U virtualenv pip wheel setuptools
+          python3 setup.py clean build bdist_wheel sdist
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
