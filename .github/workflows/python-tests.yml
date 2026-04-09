@@ -1,0 +1,52 @@
+name: Python Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.test-name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test-name: Python 3.7
+            script: kokoro/linux/python37/build.sh
+          - test-name: Python 3.7 C++
+            script: kokoro/linux/python37_cpp/build.sh
+          - test-name: Python 3.8
+            script: kokoro/linux/python38/build.sh
+          - test-name: Python 3.8 C++
+            script: kokoro/linux/python38_cpp/build.sh
+          - test-name: Python 3.9
+            script: kokoro/linux/python39/build.sh
+          - test-name: Python 3.9 C++
+            script: kokoro/linux/python39_cpp/build.sh
+          - test-name: Python 3.10
+            script: kokoro/linux/python310/build.sh
+          - test-name: Python 3.10 C++
+            script: kokoro/linux/python310_cpp/build.sh
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Run test script
+        run: bash ${{ matrix.script }}
+
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-${{ matrix.test-name }}
+          path: testoutput/
+          if-no-files-found: ignore
+

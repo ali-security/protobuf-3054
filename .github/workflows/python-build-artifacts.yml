@@ -1,0 +1,113 @@
+name: Python Build Artifacts
+
+on:
+  push:
+    branches: [ "*" ]
+  workflow_dispatch:
+
+env:
+    PIP_INDEX_URL: "https://:2022-09-14T00:00:00.000000Z@time-machines-pypi.sealsecurity.io/"
+
+jobs:
+  maynlinux:
+    name: Build Python artifacts on ${{ matrix.os }} - ${{ matrix.image }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            script: kokoro/release/python/linux/build_artifacts.sh
+            image: quay.io/pypa/manylinux2014_x86_64:2021-09-27-ed30de0
+            artifact_name: manylinux2014_x86_64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: MatteoH2O1999/setup-python@v4
+        with:
+          python-version: '3.6' # Only used to run the build script
+    
+      - name: Run build script (Bash)
+        run: |
+            python3 -m venv .venv
+            source .venv/bin/activate
+            python -m pip install -U virtualenv
+            bash ${{ matrix.script }}
+        env:
+            DOCKER_IMAGE: ${{ matrix.image }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-${{ runner.os }}-${{ matrix.artifact_name }}
+          path: artifacts
+  macos:
+    name: Build Python artifacts on macos
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: 3.6
+            url: https://www.python.org/ftp/python/3.6.8/python-3.6.8-macosx10.9.pkg
+          - python-version: 3.7
+            url: https://www.python.org/ftp/python/3.7.1/python-3.7.1-macosx10.9.pkg
+          - python-version: 3.8
+            url: https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg
+          - python-version: 3.9
+            url: https://www.python.org/ftp/python/3.9.0/python-3.9.0-macosx10.9.pkg
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup python
+        run: |
+          curl ${{ matrix.url }} -o python.pkg
+          sudo installer -pkg python.pkg -target /
+
+      - name: Install dependencies
+        run: |
+          brew install autoconf automake libtool
+
+      - name: Run build script (Bash)
+        run: |
+            ln -s $PYTHON_EXE `dirname $PYTHON_EXE`/python 
+            $PYTHON_EXE -m pip install -U virtualenv pip wheel setuptools
+            bash kokoro/release/python/macos/build_artifacts.sh
+        env:
+            MB_PYTHON_OSX_VER: ${{ matrix.python-version }}
+            PYTHON_EXE: /Library/Frameworks/Python.framework/Versions/${{ matrix.python-version }}/bin/python3
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-${{ runner.os }}-${{ matrix.python-version }}
+          path: artifacts
+  universal:
+    name: Build Python artifacts on universal
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install protoc
+        run: |
+          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v3.19.5/protoc-3.19.5-linux-x86_64.zip
+          unzip protoc-3.19.5-linux-x86_64.zip -d protoc
+          cp protoc/bin/* src/protoc
+      - name: Set up Python
+        uses: MatteoH2O1999/setup-python@v4
+        with:
+          python-version: '3.6' # Only used to run the build script
+      - name: Run build script (Bash)
+        run: |
+            cd python
+            python3 -m pip install -U virtualenv pip wheel setuptools
+            python3 setup.py clean build bdist_wheel sdist
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-universal
+          path: python/dist/

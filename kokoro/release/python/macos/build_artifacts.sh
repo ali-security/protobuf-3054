@@ -41,7 +41,11 @@ build_artifact_version() {
 
   source multibuild/common_utils.sh
   source multibuild/travis_steps.sh
-  before_install
+  # before_install
+  PIP_CMD="$PYTHON_EXE -m pip"
+  $PIP_CMD install virtualenv
+  VIRTUALENV_CMD="$(dirname $PYTHON_EXE)/virtualenv"
+  export PATH="`dirname $PYTHON_EXE`:$PATH"
 
   clean_code $REPO_DIR $BUILD_COMMIT
 
@@ -51,8 +55,4 @@ build_artifact_version() {
 }
 
 export MB_PYTHON_OSX_VER=10.9
-build_artifact_version 3.6
-build_artifact_version 3.7
-build_artifact_version 3.8
-build_artifact_version 3.9
-build_artifact_version 3.10
+build_artifact_version $MB_PYTHON_VERSION

@@ -608,8 +608,8 @@ class _Parser(object):
     if _IsWrapperMessage(message_descriptor):
       self._ConvertWrapperMessage(value['value'], sub_message)
     elif full_name in _WKTJSONMETHODS:
-      methodcaller(
-          _WKTJSONMETHODS[full_name][1], value['value'], sub_message)(self)
+      ConvertMessage(
+          value['value'], sub_message)(self)
     else:
       del value['@type']
       self._ConvertFieldValuePair(value, sub_message)
